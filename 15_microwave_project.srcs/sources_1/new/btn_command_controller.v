@@ -47,6 +47,16 @@ module btn_command_controller(
     end
 
     // 2. 다음 상태 로직 (Moore FSM - 조합 로직)
+    // always @(*) begin
+    //     case(curr_state)
+    //         IDLE_MODE: next_state = PAUSE_MODE;
+    //         PAUSE_MODE: next_state = START_MODE;
+    //         START_MODE: next_state = IDLE_MODE;
+    //         default: next_state = IDLE_MODE;
+    //     endcase
+    // end
+
+    // 2. 다음 상태 로직 (Moore FSM - 조합 로직)
     wire btnL_edge = btnL && !r_prev_btnL;  // btnL의 rising edge 검출
 
     always @(*) begin
