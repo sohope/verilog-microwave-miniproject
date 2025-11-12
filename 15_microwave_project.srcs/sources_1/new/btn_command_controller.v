@@ -3,7 +3,7 @@
 module btn_command_controller(
     input clk,
     input reset,
-    input [3:0] debounced_btn_sig,
+    // input [3:0] debounced_btn_sig,
     input btnL,           // btnL (2채널 중 상위비트) <-- btnL 추가 
     input btnR,           // btnR (2채널 중 하위비트) <-- btnR 추가 
     input [7:0] sw,
@@ -51,12 +51,8 @@ module btn_command_controller(
     always @(*) begin
         next_state = curr_state;  // 기본값: 현재 상태 유지
 
-        // IDLE 모드에서 아무 버튼이나 누르면 START_MODE로
-        if (curr_state == IDLE_MODE && (debounced_btn_sig != 4'b0000)) begin
-            next_state = START_MODE;
-        end
         // btnL 버튼으로 모드 순환
-        else if (debounced_btn_sig[0] && !r_prev_btnL) begin
+        if (btnL && !r_prev_btnL) begin
             case(curr_state)
                 IDLE_MODE: next_state = START_MODE;
                 START_MODE: next_state = IDLE_MODE;
@@ -64,10 +60,6 @@ module btn_command_controller(
                 default: next_state = IDLE_MODE;
             endcase
         end
-        // // START_MODE에서 5초 타임아웃
-        // else if (curr_state == START_MODE && r_idle_timer == (CLOCK_CYCLE_5SEC)-1) begin
-        //     next_state = IDLE_MODE;
-        // end
     end
 
     // 3. 타이머 및 기타 레지스터 업데이트 (순차 로직)
@@ -77,8 +69,8 @@ module btn_command_controller(
             r_prev_btnR <= 0;
             r_idle_timer <= 0;
         end else begin
-            r_prev_btnL <= debounced_btn_sig[0];
-            r_prev_btnR <= debounced_btn_sig[1];
+            r_prev_btnL <= btnL;
+            r_prev_btnR <= btnR;
 
             // 타이머 관리
             if (curr_state == START_MODE) begin
