@@ -7,12 +7,20 @@ module top #(
     )(
     input clk,
     input reset,        // btnU
+    input btnU,
     input btnL,         // start/pause
     input btnR,         // Cancel
+    input btnD,
     input [7:0] sw,
+    input s1,
+    input s2,
+    input key,
     output [15:0] led,
     output [3:0] an,
-    output [7:0] seg
+    output [7:0] seg,
+    output dc_motor_pwm,
+    output servo_motor_pwm,
+    output buzzer_pwm
     );
 
     wire [4:0] w_btn_debounce;
@@ -39,7 +47,7 @@ module top #(
     multi_debouncer #(
         .NUM_SIGNALS(3),
         .DEBOUNCE_LIMIT(SIG_DEBOUNCE_LIMIT)
-    ) u_debouncer (
+    ) u_multi_sig_debouncer (
         .clk(clk),
         .reset(reset),
         .noisy_sig({s1, s2, key}),
