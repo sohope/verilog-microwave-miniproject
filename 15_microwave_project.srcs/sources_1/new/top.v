@@ -9,9 +9,8 @@ module top #(
         input reset,        // btnU
         input btnU,
         input btnL,         // start/pause
-        input btnR,         // Cancel
+        input btnR,         // stop
         input btnD,
-        // input [7:0] sw,
         input s1,
         input s2,
         input key,
@@ -73,13 +72,13 @@ module top #(
         .count(w_count)
     );
 
-    // Controller 
+    // Controller
     btn_command_controller u_btn_command_controller(
         .clk(clk),
         .reset(reset),
-        .btnL(w_clean_btn[1]),   // btnL (2채널 중 상위비트) <-- btnL 추가 
-        .btnR(w_clean_btn[0]),   // btnR (2채널 중 하위비트) <-- btnR 추가 
-        .led(led),
+        .btnL(w_clean_btn[1]),   // btnL (2채널 중 상위비트) <-- btnL 추가
+        .btnR(w_clean_btn[0]),   // btnR (2채널 중 하위비트) <-- btnR 추가
+        .rotary_count(w_count),  // rotary encoder count 입력
         .seg_data(w_seg_data),
         .mode(w_mode)
     );

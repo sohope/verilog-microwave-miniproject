@@ -3,12 +3,12 @@
 module btn_command_controller(
     input clk,
     input reset,
-    input btnL,           // btnL (2채널 중 상위비트) <-- btnL 추가 
-    input btnR,           // btnR (2채널 중 하위비트) <-- btnR 추가 
+    input btnL,           // btnL (2채널 중 상위비트) <-- btnL 추가
+    input btnR,           // btnR (2채널 중 하위비트) <-- btnR 추가
+    input [7:0] rotary_count,  // rotary encoder 카운트 입력
     // input [7:0] sw,
     output [13:0] seg_data,
-    output [2:0] mode,
-    output reg [15:0] led
+    output [2:0] mode
     );
     
     // MODE 정의
@@ -26,6 +26,7 @@ module btn_command_controller(
 
     reg r_prev_btnL=0;
     reg r_prev_btnR=0;
+    reg [7:0] r_prev_rotary_count=0;  // 이전 rotary count 값 저장
 
     // 상태 레지스터 (Moore FSM)
     reg [1:0] curr_state, next_state;
@@ -58,11 +59,14 @@ module btn_command_controller(
 
     // 2. 다음 상태 로직 (Moore FSM - 조합 로직)
     wire btnL_edge = btnL && !r_prev_btnL;  // btnL의 rising edge 검출
+    wire rotary_changed = (rotary_count != r_prev_rotary_count);  // rotary count 변화 감지
 
     always @(*) begin
         case(curr_state)
             IDLE_MODE: begin
-                if (r_idle_timer == (CLOCK_CYCLE_5SEC)-1)
+                if (rotary_changed)
+                    next_state = PAUSE_MODE;  // rotary encoder 회전 시 PAUSE로
+                else if (r_idle_timer == (CLOCK_CYCLE_5SEC)-1)
                     next_state = PAUSE_MODE;  // 5초 후 자동으로 PAUSE로
                 else
                     next_state = IDLE_MODE;
@@ -95,10 +99,12 @@ module btn_command_controller(
         if (reset) begin
             r_prev_btnL <= 0;
             r_prev_btnR <= 0;
+            r_prev_rotary_count <= 0;
             r_idle_timer <= 0;
         end else begin
             r_prev_btnL <= btnL;
             r_prev_btnR <= btnR;
+            r_prev_rotary_count <= rotary_count;
 
             // 타이머 관리
             if (curr_state == PAUSE_MODE) begin
@@ -124,7 +130,16 @@ module btn_command_controller(
                 r_counter_1sec <= 0;
                 r_counter_1min <= 0;
             end else if(curr_state == PAUSE_MODE) begin
-                
+                // PAUSE 모드에서는 rotary encoder로 시간 설정
+                // rotary_count를 초 단위로 변환 (최대 99분 59초)
+                r_counter_10ns <= 0;
+                if (rotary_count <= 99) begin
+                    r_counter_1min <= rotary_count;
+                    r_counter_1sec <= 0;
+                end else begin
+                    r_counter_1min <= 99;
+                    r_counter_1sec <= 59;
+                end
             end
             // if (curr_state == START_MODE && !r_pause) begin  // 추가: 일시정지 시 카운트 정지  -->  && !r_pause
             else if (curr_state == START_MODE) begin  // 추가: 일시정지 시 카운트 정지  -->  && !r_pause
@@ -154,15 +169,14 @@ module btn_command_controller(
     always @(*) begin
         case(curr_state)
             IDLE_MODE: begin
-                // 분:초 형식 (예: 12:34)
-                r_seg_data = r_counter_1min * 100 + r_counter_1sec;
+                // IDLE 모드: 00:00 표시
+                r_seg_data = 0;
             end
             PAUSE_MODE, START_MODE: begin
-                // 초.밀리초 형식 (예: 12.34초 = 1234)
-                // r_seg_data = r_stopwatch_sec * 100 + r_stopwatch_10ms;
+                // 분:초 형식 (예: 12:34 = 12분 34초)
+                r_seg_data = r_counter_1min * 100 + r_counter_1sec;
             end
             default: begin
-                // IDLE 모드에서는 FND 컨트롤러에서 애니메이션 처리
                 r_seg_data = 0;
             end
         endcase
