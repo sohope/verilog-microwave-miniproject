@@ -14,6 +14,7 @@ module top #(
         input s1,
         input s2,
         input key,
+        input sw,         // SW0 스위치
         output [15:0] led,
         output [3:0] an,
         output [7:0] seg,
@@ -79,6 +80,7 @@ module top #(
         .btnL(w_clean_btn[1]),   // btnL (2채널 중 상위비트) <-- btnL 추가
         .btnR(w_clean_btn[0]),   // btnR (2채널 중 하위비트) <-- btnR 추가
         .rotary_count(w_count),  // rotary encoder count 입력
+        .sw(sw),                 // SW0 스위치 입력 (서보모터용)
         .seg_data(w_seg_data),
         .mode(w_mode)
     );
@@ -112,12 +114,11 @@ module top #(
     );
     
     // Buzzer
-    power_on_melody u_power_on_melody(
+    buzzer_door u_buzzer_door(
         .clk(clk),
         .reset(reset),
-        .btnL(w_btnL),     
-        .btnR(w_btnR),     
-        .buzzer(buzzer)
+        .sw(sw),              // SW0 스위치 입력
+        .buzzer(buzzer_pwm)   // 부저 출력
     );
 
 endmodule

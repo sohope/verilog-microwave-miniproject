@@ -6,7 +6,7 @@ module btn_command_controller(
     input btnL,           // btnL (2채널 중 상위비트) <-- btnL 추가
     input btnR,           // btnR (2채널 중 하위비트) <-- btnR 추가
     input [7:0] rotary_count,  // rotary encoder 카운트 입력
-    // input [7:0] sw,
+    input sw,             // SW0 스위치 입력 (서보모터용)
     output [13:0] seg_data,
     output [2:0] mode
     );
@@ -176,5 +176,9 @@ module btn_command_controller(
 
     assign seg_data = r_seg_data;
     assign mode = {1'b0, curr_state};
+
+    // TODO: SW0/SW1에 따른 서보모터 제어 추가
+    // SW0 올리면: 서보모터 90도 설정
+    // SW1 내리면: 서보모터 0도 설정
 
 endmodule
