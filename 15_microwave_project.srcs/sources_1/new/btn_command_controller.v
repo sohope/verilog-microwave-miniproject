@@ -5,7 +5,7 @@ module btn_command_controller(
     input reset,
     input btnL,           // btnL (2채널 중 상위비트) <-- btnL 추가 
     input btnR,           // btnR (2채널 중 하위비트) <-- btnR 추가 
-    input [7:0] sw,
+    // input [7:0] sw,
     output [13:0] seg_data,
     output [2:0] mode,
     output reg [15:0] led

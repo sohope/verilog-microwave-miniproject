@@ -5,32 +5,40 @@ module top #(
         parameter SIG_DEBOUNCE_LIMIT = 100_000_000/500,  // 2ms (기본값)
         parameter FND_BLINK_LIMIT = 50_000_000           // 0.5초 (기본값)
     )(
-    input clk,
-    input reset,        // btnU
-    input btnU,
-    input btnL,         // start/pause
-    input btnR,         // Cancel
-    input btnD,
-    input [7:0] sw,
-    input s1,
-    input s2,
-    input key,
-    output [15:0] led,
-    output [3:0] an,
-    output [7:0] seg,
-    output dc_motor_pwm,
-    output servo_motor_pwm,
-    output buzzer_pwm
+        input clk,
+        input reset,        // btnU
+        input btnU,
+        input btnL,         // start/pause
+        input btnR,         // Cancel
+        input btnD,
+        // input [7:0] sw,
+        input s1,
+        input s2,
+        input key,
+        output [15:0] led,
+        output [3:0] an,
+        output [7:0] seg,
+        output dc_motor_pwm,
+        output servo_motor_pwm,
+        output buzzer_pwm
     );
 
-    wire [4:0] w_btn_debounce;
+    // FND 제어용 변수
     wire [13:0] w_seg_data;
     wire [2:0] w_mode;
 
+    // 디바운서 결과 저장용 변수
     wire [1:0] w_clean_btn;
 	wire [2:0] w_clean_sig;
+
+    // 로터리 엔코더 관련 변수
 	wire [7:0] w_count;
-	wire [1:0] w_direction;
+
+    // DC 모터 및 서보 모터 출력 관련 변수
+    wire pwm_out_dc_motor;
+    wire duty_cycle_dc_motor;
+    wire pwm_out_servo_motor;
+    wire duty_cycle_servo_motor;
 
     // btnL 디바운스 인스턴스 생성 (10ms용)
     multi_debouncer #(
@@ -62,8 +70,7 @@ module top #(
         .clean_s2(w_clean_sig[1]),
         .clean_key(w_clean_sig[0]),
         .led(led),
-        .count(w_count),
-        .direction(w_direction)
+        .count(w_count)
     );
 
     // Controller 
@@ -72,7 +79,6 @@ module top #(
         .reset(reset),
         .btnL(w_clean_btn[1]),   // btnL (2채널 중 상위비트) <-- btnL 추가 
         .btnR(w_clean_btn[0]),   // btnR (2채널 중 하위비트) <-- btnR 추가 
-        .sw(sw),
         .led(led),
         .seg_data(w_seg_data),
         .mode(w_mode)
@@ -83,9 +89,8 @@ module top #(
         .clk(clk),
         .duty_inc(w_debounced_inc_btn),
         .duty_dec(w_debounced_dec_btn),
-        .DUTY_CYCLE(w_DUTY_CYCLE),
-        .PWM_OUT(PWM_OUT),       // 10MHz PWM output signal 
-        .PWM_OUT_LED(PWM_OUT_LED)
+        .DUTY_CYCLE(duty_cycle_dc_motor),
+        .PWM_OUT(pwm_out_dc_motor)       // 10MHz PWM output signal 
     );
 
     // Servo Motor
@@ -93,9 +98,8 @@ module top #(
         .clk(clk),
         .duty_inc(w_debounced_inc_btn),
         .duty_dec(w_debounced_dec_btn),
-        .DUTY_CYCLE(w_DUTY_CYCLE),
-        .PWM_OUT(PWM_OUT),       // 10MHz PWM output signal 
-        .PWM_OUT_LED(PWM_OUT_LED)
+        .DUTY_CYCLE(duty_cycle_servo_motor),
+        .PWM_OUT(pwm_out_servo_motor)       // 10MHz PWM output signal 
     );
 
     // FND

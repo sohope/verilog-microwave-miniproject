@@ -7,11 +7,10 @@ module rotary(
         input clean_s1,
         input clean_s2,
         output [15:0] led,
-        output [7:0] count,
-        output [1:0] direction
+        output [7:0] count
+        // output [1:0] direction
     );
     
-    reg [1:0] r_direction = 2'b00;      // 시계방향 : 01, 반시계: 10
     reg [1:0] r_prev_state = 2'b00;
     reg [1:0] r_curr_state = 2'b00;
     reg [7:0] r_count = 8'h00;    // 00 ~ ff
@@ -21,7 +20,6 @@ module rotary(
     // 시계방향일 때는 카운터를 증가, 반시계방향일 때는 카운터를 감소
     always @(posedge clk, posedge reset) begin
         if (reset) begin
-            r_direction <= 0;            
             r_prev_state <= 0;            
             r_curr_state <= 0;            
             r_count <= 0;            
@@ -33,13 +31,11 @@ module rotary(
                 4'b0010, 4'b1011, 4'b1101, 4'b0100: begin
                     if (r_count < 8'hFF) // overflow
                         r_count <= r_count + 1;
-                        r_direction <= 2'b01;       // CW Indicator
                 end
                 // CCW: 00 -> 01 -> 11 -> 10 -> 00
                 4'b0001, 4'b0111, 4'b1110, 4'b1000: begin
                     if (r_count > 8'h00) // underflow
                         r_count <= r_count - 1;
-                        r_direction <= 2'b10;       // CCW Indicator
                 end
                 default: begin
                     
@@ -61,11 +57,9 @@ module rotary(
         end
     end
 
-    assign led[15:14] = r_direction;
     assign led[13] = r_led_toggle;
     assign led[12:8] = 5'b00000;    // 안쓰는 LED OFF
     assign led[7:0] = r_count;
     assign count = r_count;
-    assign direction = r_direction;
 
 endmodule

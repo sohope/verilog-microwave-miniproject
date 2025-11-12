@@ -6,8 +6,8 @@ module pwm_duty_cycle_control (
     input duty_inc,
     input duty_dec,
     output [3:0] DUTY_CYCLE,
-    output PWM_OUT,       // 10MHz PWM output signal 
-    output PWM_OUT_LED
+    output PWM_OUT       // 10MHz PWM output signal 
+   //  output PWM_OUT_LED
  ); 
 
   reg[3:0] r_DUTY_CYCLE=5;     // initial duty cycle is 50%
@@ -32,6 +32,6 @@ module pwm_duty_cycle_control (
  end
 
  assign PWM_OUT = r_counter_PWM < r_DUTY_CYCLE ? 1:0;
- assign PWM_OUT_LED = PWM_OUT;
+//  assign PWM_OUT_LED = PWM_OUT;
  assign DUTY_CYCLE = r_DUTY_CYCLE;
 endmodule
