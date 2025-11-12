@@ -92,13 +92,34 @@ module btn_command_controller(
         end
     end
 
+
+// ===================================================
+// 버튼 L 일시정지 토글 추가
+    reg r_pause = 1'b0;
+    reg r_prev1_btnL = 1'b0;    //  <--변수 겹침 r_prev_btnL 
+    
+    always @(posedge clk or posedge reset) begin
+        if (reset) begin
+            r_pause     <= 1'b0;
+            r_prev1_btnL <= 1'b0;
+        end else begin
+            if (btnL & ~r_prev1_btnL)   // 상승엣지에서만 토글
+                r_pause <= ~r_pause;
+            r_prev1_btnL <= btnL;
+        end
+    end
+// ===================================================
+
     // 분초 시계: (00분 00초 ~ 59분 59초, 1sec 단위)
     always @(posedge clk, posedge reset) begin
         if (reset) begin
             r_counter_10ns <= 0;
             r_counter_1sec <= 5;
             r_counter_1min <= 1;
-        end else if (curr_state == IDLE_MODE) begin
+        end 
+        
+        else if (curr_state == IDLE_MODE && !r_pause) begin  // 추가: 일시정지 시 카운트 정지  -->  && !r_pause
+
             if (r_counter_10ns == MAIN_FREQUENCY-1) begin  // 100,000,000-1(1s)에 도달하면
                 if (r_counter_1sec == 0) begin // 초단위가 0에 도달하면
                     if (r_counter_1min == 0) begin // 분단위가 0에 도달하면
