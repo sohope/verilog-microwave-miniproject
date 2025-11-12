@@ -3,17 +3,19 @@
 module btn_command_controller(
     input clk,
     input reset,
-    input [1:0] debounced_btn_sig,
+    input [3:0] debounced_btn_sig,
+    input btnL,           // btnL (2채널 중 상위비트) <-- btnL 추가 
+    input btnR,           // btnR (2채널 중 하위비트) <-- btnR 추가 
     input [7:0] sw,
     output [13:0] seg_data,
-    output [1:0] mode,
+    output [2:0] mode,
     output reg [15:0] led
     );
     
     // MODE 정의
     parameter IDLE_MODE = 2'b00;
-    parameter PAUSE_MODE = 2'b01;
-    parameter START_MODE = 2'b10;
+    parameter START_MODE = 2'b01;
+    parameter STOP_MODE = 2'b10;
 
     // 시간 사이클 정의
     parameter MAIN_FREQUENCY = 100_000_000;             // 메인 클럭 주파수
@@ -49,21 +51,21 @@ module btn_command_controller(
     always @(*) begin
         next_state = curr_state;  // 기본값: 현재 상태 유지
 
-        // IDLE 모드에서 아무 버튼이나 누르면 PAUSE_MODE로
+        // IDLE 모드에서 아무 버튼이나 누르면 START_MODE로
         if (curr_state == IDLE_MODE && (debounced_btn_sig != 4'b0000)) begin
-            next_state = PAUSE_MODE;
+            next_state = START_MODE;
         end
         // btnL 버튼으로 모드 순환
         else if (debounced_btn_sig[0] && !r_prev_btnL) begin
             case(curr_state)
-                IDLE_MODE: next_state = PAUSE_MODE;
-                PAUSE_MODE: next_state = IDLE_MODE;
+                IDLE_MODE: next_state = START_MODE;
                 START_MODE: next_state = IDLE_MODE;
+                STOP_MODE: next_state = IDLE_MODE;
                 default: next_state = IDLE_MODE;
             endcase
         end
-        // // PAUSE_MODE에서 5초 타임아웃
-        // else if (curr_state == PAUSE_MODE && r_idle_timer == (CLOCK_CYCLE_5SEC)-1) begin
+        // // START_MODE에서 5초 타임아웃
+        // else if (curr_state == START_MODE && r_idle_timer == (CLOCK_CYCLE_5SEC)-1) begin
         //     next_state = IDLE_MODE;
         // end
     end
@@ -79,7 +81,7 @@ module btn_command_controller(
             r_prev_btnR <= debounced_btn_sig[1];
 
             // 타이머 관리
-            if (curr_state == PAUSE_MODE) begin
+            if (curr_state == START_MODE) begin
                 if (r_idle_timer == (CLOCK_CYCLE_5SEC)-1)
                     r_idle_timer <= 0;
                 else
@@ -125,7 +127,7 @@ module btn_command_controller(
                 // 분:초 형식 (예: 12:34)
                 r_seg_data = r_counter_1min * 100 + r_counter_1sec;
             end
-            PAUSE_MODE, START_MODE: begin
+            START_MODE, STOP_MODE: begin
                 // 초.밀리초 형식 (예: 12.34초 = 1234)
                 // r_seg_data = r_stopwatch_sec * 100 + r_stopwatch_10ms;
             end

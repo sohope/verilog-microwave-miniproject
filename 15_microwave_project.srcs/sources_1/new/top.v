@@ -7,16 +7,17 @@ module top #(
     )(
     input clk,
     input reset,        // btnU
-    input btnL,
-    input btnR,
+    input btnL,         // start/pause
+    input btnR,         // Cancel
     input [7:0] sw,
     output [15:0] led,
     output [3:0] an,
     output [7:0] seg
     );
 
+    wire [4:0] w_btn_debounce;
     wire [13:0] w_seg_data;
-    wire [1:0] w_mode;
+    wire [2:0] w_mode;
 
     wire [1:0] w_clean_btn;
 	wire [2:0] w_clean_sig;
@@ -46,13 +47,15 @@ module top #(
     );
 
     btn_command_controller u_btn_command_controller(
+        // .debounced_btn_sig(w_btn_debounce),
         .clk(clk),
         .reset(reset),
-        .debounced_btn_sig(w_clean_btn),
+        .btnL(w_clean_btn[1]),   // ✅ btnL (2채널 중 상위비트) <-- btnL 추가 
+        .btnR(w_clean_btn[0]),   // ✅ btnR (2채널 중 하위비트) <-- btnR 추가 
         .sw(sw),
+        .led(led),
         .seg_data(w_seg_data),
-        .mode(w_mode),
-        .led(led)
+        .mode(w_mode)
     );
 
     fnd_controller u_fnd_controller(
