@@ -15,9 +15,8 @@ module top #(
     output [7:0] seg
     );
 
-    wire [4:0] w_btn_debounce;
     wire [13:0] w_seg_data;
-    wire [2:0] w_mode;
+    wire [1:0] w_mode;
 
     wire [1:0] w_clean_btn;
 	wire [2:0] w_clean_sig;
@@ -26,12 +25,12 @@ module top #(
 
     // btnL 디바운스 인스턴스 생성 (10ms용)
     multi_debouncer #(
-        .NUM_SIGNALS(1),
+        .NUM_SIGNALS(2),
         .DEBOUNCE_LIMIT(BTN_DEBOUNCE_LIMIT)
     ) u_multi_btn_debouncer(
         .clk(clk),
         .reset(reset),
-        .noisy_sig({btnL}),
+        .noisy_sig({btnL, btnR}),
         .clean_sig(w_clean_btn)
     );
 
@@ -47,13 +46,13 @@ module top #(
     );
 
     btn_command_controller u_btn_command_controller(
-        .debounced_btn_sig(w_btn_debounce),
         .clk(clk),
         .reset(reset),
+        .debounced_btn_sig(w_clean_btn),
         .sw(sw),
-        .led(led),
         .seg_data(w_seg_data),
-        .mode(w_mode)
+        .mode(w_mode),
+        .led(led)
     );
 
     fnd_controller u_fnd_controller(
