@@ -1,0 +1,48 @@
+# Vivado
+*.jou
+*.log
+*.str
+*.zip
+*.tmp
+
+# Vivado Project Directories
+*.cache/
+*.hw/
+*.ip_user_files/
+*.runs/
+*.sim/
+.Xil/
+
+# Vivado Project Files (uncomment if you don't want to track .xpr)
+# *.xpr
+
+# Synthesis and Implementation Results
+*.bit
+*.bin
+*.ltx
+*.mcs
+*.prm
+
+# Backup Files
+*.backup.*
+*.bak
+
+# Operating System Files
+.DS_Store
+Thumbs.db
+*~
+
+# Vivado GUI Settings
+*.gise
+*.xise
+vivado*.backup.*
+hs_err_pid*
+
+# Temporary Files
+*.swp
+*.swo
+*~
+
+# SDK/Vitis
+.metadata/
+RemoteSystemsTempFiles/
