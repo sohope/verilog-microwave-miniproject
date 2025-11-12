@@ -7,14 +7,17 @@ module btn_command_controller(
     input btnR,           // btnR (2채널 중 하위비트) <-- btnR 추가
     input [7:0] rotary_count,  // rotary encoder 카운트 입력
     input sw,             // SW0 스위치 입력 (서보모터용)
+    input buzzer_done,    // 부저 3회 완료 신호
     output [13:0] seg_data,
-    output [2:0] mode
+    output [2:0] mode,
+    output beep_finish    // 타이머 종료 부저 트리거 (3회)
     );
-    
+
     // MODE 정의
     parameter IDLE_MODE = 2'b00;
     parameter PAUSE_MODE = 2'b01;
     parameter START_MODE = 2'b10;
+    parameter FINISH_MODE = 2'b11;
 
     // 시간 사이클 정의
     parameter MAIN_FREQUENCY = 100_000_000;             // 메인 클럭 주파수
@@ -75,11 +78,18 @@ module btn_command_controller(
                 if (btnL_edge)
                     next_state = PAUSE_MODE;  // btnL 누르면 PAUSE로
                 else if (r_counter_1min == 0 && r_counter_1sec == 0)
-                    next_state = IDLE_MODE;   // 00:00 도달하면 IDLE로
+                    next_state = FINISH_MODE;  // 00:00 도달하면 FINISH로
                 else
                     next_state = START_MODE;
             end
-            
+
+            FINISH_MODE: begin
+                if (buzzer_done)
+                    next_state = IDLE_MODE;   // 부저 3회 완료 후 IDLE로
+                else
+                    next_state = FINISH_MODE;
+            end
+
             default: next_state = IDLE_MODE;
         endcase
     end
@@ -168,6 +178,10 @@ module btn_command_controller(
                 // 분:초 형식 (예: 12:34 = 12분 34초)
                 r_seg_data = r_counter_1min * 100 + r_counter_1sec;
             end
+            FINISH_MODE: begin
+                // FINISH 모드: 00:00 표시 (깜빡임은 FND 컨트롤러에서 처리)
+                r_seg_data = 0;
+            end
             default: begin
                 r_seg_data = 0;
             end
@@ -177,8 +191,11 @@ module btn_command_controller(
     assign seg_data = r_seg_data;
     assign mode = {1'b0, curr_state};
 
-    // TODO: SW0/SW1에 따른 서보모터 제어 추가
+    // FINISH_MODE에서 부저 3회 트리거 신호 생성
+    assign beep_finish = (curr_state == FINISH_MODE);
+
+    // TODO: SW0에 따른 서보모터 제어 추가
     // SW0 올리면: 서보모터 90도 설정
-    // SW1 내리면: 서보모터 0도 설정
+    // SW0 내리면: 서보모터 0도 설정
 
 endmodule

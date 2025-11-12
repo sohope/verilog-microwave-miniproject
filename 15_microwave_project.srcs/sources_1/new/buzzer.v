@@ -8,7 +8,9 @@ module buzzer_door #(
     input clk,
     input reset,
     input sw,            // SW0 스위치 입력
-    output buzzer        // 부저 출력
+    input beep_finish,   // 타이머 종료 부저 트리거 (3회)
+    output buzzer,       // 부저 출력
+    output buzzer_done   // 3회 울림 완료 신호
 );
 
     // 주파수 생성용 카운터 (2kHz = 50us 주기)
@@ -20,7 +22,11 @@ module buzzer_door #(
     reg [27:0] r_beep_timer = 0;
     reg r_beeping = 0;
     reg r_beep_double = 0;  // 두 번 울림 플래그
+    reg r_beep_triple = 0;  // 세 번 울림 플래그 (타이머 종료)
     reg r_beep_phase = 0;   // 0: 첫 번째 삡, 1: 두 번째 삡
+    reg [1:0] r_beep_count = 0;  // 0~2: 첫/두/세 번째 삡
+    reg r_finish_done = 0;  // 3회 울림 완료 플래그
+    reg r_finish_triggered = 0;  // finish 한 번만 트리거되도록
 
     // SW0 이전 값 저장 (엣지 검출용)
     reg r_prev_sw0 = 0;
@@ -57,12 +63,28 @@ module buzzer_door #(
             r_beep_timer <= 0;
             r_beeping <= 0;
             r_beep_double <= 0;
+            r_beep_triple <= 0;
             r_beep_phase <= 0;
+            r_beep_count <= 0;
+            r_finish_done <= 0;
+            r_finish_triggered <= 0;
         end else begin
+            // 타이머 종료: "삡삡삡" 3회 소리 (beep_finish가 활성화되고 아직 트리거 안됨)
+            if (beep_finish && !r_finish_triggered && !r_beeping) begin
+                r_beeping <= 1;
+                r_beep_triple <= 1;
+                r_beep_double <= 0;
+                r_beep_timer <= 0;
+                r_beep_phase <= 0;
+                r_beep_count <= 0;
+                r_finish_done <= 0;
+                r_finish_triggered <= 1;  // 트리거됨 표시
+            end
             // SW0 올리면: 짧은 "삡" 소리
-            if (sw0_rising && !r_beeping) begin
+            else if (sw0_rising && !r_beeping) begin
                 r_beeping <= 1;
                 r_beep_double <= 0;
+                r_beep_triple <= 0;
                 r_beep_timer <= 0;
                 r_beep_phase <= 0;
             end
@@ -70,6 +92,7 @@ module buzzer_door #(
             else if (sw0_falling && !r_beeping) begin
                 r_beeping <= 1;
                 r_beep_double <= 1;
+                r_beep_triple <= 0;
                 r_beep_timer <= 0;
                 r_beep_phase <= 0;
             end
@@ -77,7 +100,34 @@ module buzzer_door #(
             else if (r_beeping) begin
                 r_beep_timer <= r_beep_timer + 1;
 
-                if (r_beep_double) begin
+                if (r_beep_triple) begin
+                    // "삡삡삡" 3회 모드
+                    if (r_beep_phase == 0) begin
+                        // "삡" 소리 (100ms)
+                        if (r_beep_timer >= BEEP_DURATION) begin
+                            r_beep_timer <= 0;
+                            r_beep_phase <= 1;  // 휴지로 전환
+                        end
+                    end else begin
+                        // 휴지 구간 (100ms)
+                        if (r_beep_timer >= BEEP_DURATION) begin
+                            r_beep_timer <= 0;
+                            r_beep_count <= r_beep_count + 1;
+
+                            if (r_beep_count >= 2) begin
+                                // 3회 완료
+                                r_beeping <= 0;
+                                r_beep_triple <= 0;
+                                r_beep_phase <= 0;
+                                r_beep_count <= 0;
+                                r_finish_done <= 1;
+                            end else begin
+                                // 다음 삡으로
+                                r_beep_phase <= 0;
+                            end
+                        end
+                    end
+                end else if (r_beep_double) begin
                     // "삡삡" 모드
                     if (r_beep_phase == 0) begin
                         // 첫 번째 "삡" (100ms)
@@ -101,6 +151,12 @@ module buzzer_door #(
                         r_beep_timer <= 0;
                     end
                 end
+            end else begin
+                // beeping이 끝난 후 finish_done 유지
+                if (!beep_finish) begin
+                    r_finish_done <= 0;
+                    r_finish_triggered <= 0;  // beep_finish가 꺼지면 트리거 플래그도 리셋
+                end
             end
         end
     end
@@ -108,7 +164,16 @@ module buzzer_door #(
     // 부저 출력 생성
     reg r_buzzer_out = 0;
     always @(*) begin
-        if (r_beep_double && r_beep_phase == 1) begin
+        if (r_beep_triple) begin
+            // "삡삡삡" 3회 모드
+            if (r_beep_phase == 0) begin
+                // "삡" 소리 구간
+                r_buzzer_out = r_beep_clk;
+            end else begin
+                // 휴지 구간
+                r_buzzer_out = 0;
+            end
+        end else if (r_beep_double && r_beep_phase == 1) begin
             // "삡삡" 모드의 두 번째 삡
             if (r_beep_timer >= BEEP_DURATION) begin
                 // 두 번째 "삡" (100ms ~ 200ms 구간)
@@ -126,5 +191,6 @@ module buzzer_door #(
     end
 
     assign buzzer = r_buzzer_out;
+    assign buzzer_done = r_finish_done;
 
 endmodule

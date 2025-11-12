@@ -27,6 +27,10 @@ module top #(
     wire [13:0] w_seg_data;
     wire [2:0] w_mode;
 
+    // 부저 제어용 변수
+    wire w_beep_finish;   // 타이머 종료 부저 트리거 (3회)
+    wire w_buzzer_done;   // 부저 3회 완료 신호
+
     // 디바운서 결과 저장용 변수
     wire [1:0] w_clean_btn;
 	wire [2:0] w_clean_sig;
@@ -81,8 +85,10 @@ module top #(
         .btnR(w_clean_btn[0]),   // btnR (2채널 중 하위비트) <-- btnR 추가
         .rotary_count(w_count),  // rotary encoder count 입력
         .sw(sw),                 // SW0 스위치 입력 (서보모터용)
+        .buzzer_done(w_buzzer_done),  // 부저 3회 완료 신호
         .seg_data(w_seg_data),
-        .mode(w_mode)
+        .mode(w_mode),
+        .beep_finish(w_beep_finish)   // 타이머 종료 부저 트리거 (3회)
     );
 
     // DC Motor
@@ -117,8 +123,10 @@ module top #(
     buzzer_door u_buzzer_door(
         .clk(clk),
         .reset(reset),
-        .sw(sw),              // SW0 스위치 입력
-        .buzzer(buzzer_pwm)   // 부저 출력
+        .sw(sw),                    // SW0 스위치 입력
+        .beep_finish(w_beep_finish), // 타이머 종료 부저 트리거 (3회)
+        .buzzer(buzzer_pwm),        // 부저 출력
+        .buzzer_done(w_buzzer_done)  // 부저 3회 완료 신호
     );
 
 endmodule
