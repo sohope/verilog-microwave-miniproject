@@ -48,16 +48,6 @@ module btn_command_controller(
     end
 
     // 2. 다음 상태 로직 (Moore FSM - 조합 로직)
-    // always @(*) begin
-    //     case(curr_state)
-    //         IDLE_MODE: next_state = PAUSE_MODE;
-    //         PAUSE_MODE: next_state = START_MODE;
-    //         START_MODE: next_state = IDLE_MODE;
-    //         default: next_state = IDLE_MODE;
-    //     endcase
-    // end
-
-    // 2. 다음 상태 로직 (Moore FSM - 조합 로직)
     wire btnL_edge = btnL && !r_prev_btnL;  // btnL의 rising edge 검출
     wire rotary_changed = (rotary_count != r_prev_rotary_count);  // rotary count 변화 감지
 
@@ -130,12 +120,14 @@ module btn_command_controller(
                 r_counter_1sec <= 0;
                 r_counter_1min <= 0;
             end else if(curr_state == PAUSE_MODE) begin
-                // PAUSE 모드에서는 rotary encoder로 시간 설정
-                // rotary_count를 초 단위로 변환 (최대 99분 59초)
+                // PAUSE 모드에서는 rotary encoder로 시간 설정 (10초 단위)
+                // rotary_count * 10초 = 총 초 단위
                 r_counter_10ns <= 0;
-                if (rotary_count <= 99) begin
-                    r_counter_1min <= rotary_count;
-                    r_counter_1sec <= 0;
+
+                // 총 초 계산 (최대 99분 59초 = 5999초)
+                if (rotary_count * 10 <= 5999) begin
+                    r_counter_1min <= (rotary_count * 10) / 60;  // 분 계산
+                    r_counter_1sec <= (rotary_count * 10) % 60;  // 초 계산 (나머지)
                 end else begin
                     r_counter_1min <= 99;
                     r_counter_1sec <= 59;
