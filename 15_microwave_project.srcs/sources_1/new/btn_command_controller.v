@@ -68,8 +68,8 @@ module btn_command_controller(
             PAUSE_MODE: begin
                 if (btnL_edge)
                     next_state = START_MODE;  // btnL 누르면 START로
-                else if (r_idle_timer == (CLOCK_CYCLE_5SEC)-1)
-                    next_state = IDLE_MODE;   // 5초간 아무 동작 없으면 IDLE로
+                // else if (r_idle_timer == (CLOCK_CYCLE_5SEC)-1)
+                //     next_state = IDLE_MODE;   // 5초간 아무 동작 없으면 IDLE로
                 else
                     next_state = PAUSE_MODE;
             end
@@ -132,18 +132,22 @@ module btn_command_controller(
                 r_counter_1sec <= 0;
                 r_counter_1min <= 0;
             end else if(curr_state == PAUSE_MODE) begin
-                // PAUSE 모드에서는 rotary encoder로 시간 설정 (10초 단위)
+                // PAUSE 모드에서는 rotary encoder 변경 시에만 시간 설정 (10초 단위)
                 // rotary_count * 10초 = 총 초 단위
                 r_counter_10ns <= 0;
 
-                // 총 초 계산 (최대 99분 59초 = 5999초)
-                if (rotary_count * 10 <= 5999) begin
-                    r_counter_1min <= (rotary_count * 10) / 60;  // 분 계산
-                    r_counter_1sec <= (rotary_count * 10) % 60;  // 초 계산 (나머지)
-                end else begin
-                    r_counter_1min <= 99;
-                    r_counter_1sec <= 59;
+                // rotary encoder가 변경되었을 때만 시간 업데이트
+                if (rotary_changed) begin
+                    // 총 초 계산 (최대 99분 59초 = 5999초)
+                    if (rotary_count * 10 <= 5999) begin
+                        r_counter_1min <= (rotary_count * 10) / 60;  // 분 계산
+                        r_counter_1sec <= (rotary_count * 10) % 60;  // 초 계산 (나머지)
+                    end else begin
+                        r_counter_1min <= 99;
+                        r_counter_1sec <= 59;
+                    end
                 end
+                // rotary 변경 없으면 현재 값 유지 (START에서 멈춘 값 유지)
             end
             // if (curr_state == START_MODE && !r_pause) begin  // 추가: 일시정지 시 카운트 정지  -->  && !r_pause
             else if (curr_state == START_MODE) begin  // 추가: 일시정지 시 카운트 정지  -->  && !r_pause
