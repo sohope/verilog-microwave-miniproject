@@ -127,15 +127,15 @@ module btn_command_controller(
                 r_counter_1sec <= 0;
                 r_counter_1min <= 0;
             end else if(curr_state == PAUSE_MODE) begin
-                // PAUSE 모드에서는 rotary encoder 변경 시에만 시간 설정 (10초 단위)
+                // PAUSE 모드에서는 rotary encoder 변경 시에만 시간 설정 (2초 단위)
                 r_counter_10ns <= 0;
 
                 // rotary encoder가 변경되었을 때만 시간 업데이트
                 if (rotary_changed) begin
                     // 총 초 계산 (최대 99분 59초 = 5999초)
-                    if (rotary_count * 10 <= 5999) begin
-                        r_counter_1min <= (rotary_count * 10) / 60;  // 분 계산
-                        r_counter_1sec <= (rotary_count * 10) % 60;  // 초 계산 (나머지)
+                    if (rotary_count * 2 <= 5999) begin
+                        r_counter_1min <= (rotary_count * 2) / 60;  // 분 계산
+                        r_counter_1sec <= (rotary_count * 2) % 60;  // 초 계산 (나머지)
                     end else begin
                         r_counter_1min <= 99;
                         r_counter_1sec <= 59;
