@@ -52,6 +52,7 @@ module btn_command_controller(
 
     // 2. 다음 상태 로직 (Moore FSM - 조합 로직)
     wire btnL_edge = btnL && !r_prev_btnL;  // btnL의 rising edge 검출
+    wire btnR_edge = btnR && !r_prev_btnR;  // btnR의 rising edge 검출
     wire rotary_changed = (rotary_count != r_prev_rotary_count);  // rotary count 변화 감지
 
     always @(*) begin
@@ -62,17 +63,21 @@ module btn_command_controller(
                 else
                     next_state = IDLE_MODE;
             end
-            
+
             PAUSE_MODE: begin
                 if (btnL_edge)
                     next_state = START_MODE;  // btnL 누르면 START로
+                else if (btnR_edge)
+                    next_state = IDLE_MODE;   // btnR 누르면 IDLE로
                 else
                     next_state = PAUSE_MODE;
             end
-            
+
             START_MODE: begin
                 if (sw)
                     next_state = PAUSE_MODE;  // SW0 ON(문 열림)이면 PAUSE로
+                else if (btnR_edge)
+                    next_state = PAUSE_MODE;  // btnR 누르면 PAUSE로
                 else if (btnL_edge)
                     next_state = PAUSE_MODE;  // btnL 누르면 PAUSE로
                 else if (r_counter_1min == 0 && r_counter_1sec == 0)
