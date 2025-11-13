@@ -75,7 +75,9 @@ module btn_command_controller(
             end
             
             START_MODE: begin
-                if (btnL_edge)
+                if (sw)
+                    next_state = PAUSE_MODE;  // SW0 ON(문 열림)이면 PAUSE로
+                else if (btnL_edge)
                     next_state = PAUSE_MODE;  // btnL 누르면 PAUSE로
                 else if (r_counter_1min == 0 && r_counter_1sec == 0)
                     next_state = FINISH_MODE;  // 00:00 도달하면 FINISH로
