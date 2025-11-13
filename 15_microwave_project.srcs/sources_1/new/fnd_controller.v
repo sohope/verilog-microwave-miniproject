@@ -10,11 +10,17 @@ module fnd_controller(
     );
 
     parameter IDLE_MODE = 3'b100;
+    parameter START_MODE = 3'b010;
+    parameter MAIN_FREQUENCY = 100_000_000;
 
     wire [1:0] w_sel;
     wire [3:0] w_d1, w_d10, w_d100, w_d1000;
     wire [3:0] w_an_num, w_an_idle;
     wire [7:0] w_seg_num, w_seg_idle;
+
+    // START 모드에서 1초마다 토글 (카운터 <-> 애니메이션)
+    reg [$clog2(MAIN_FREQUENCY)-1:0] r_toggle_counter = 0;
+    reg r_show_animation = 0;
 
     // 1ms마다 FND 자릿수 선택
     fnd_digit_select u_fnd_digit_select (
@@ -55,9 +61,31 @@ module fnd_controller(
         .seg(w_seg_idle)
     );
 
+    // START 모드에서 1초마다 토글
+    always @(posedge clk, posedge reset) begin
+        if (reset) begin
+            r_toggle_counter <= 0;
+            r_show_animation <= 0;
+        end else begin
+            if (mode == START_MODE) begin
+                if (r_toggle_counter == MAIN_FREQUENCY - 1) begin
+                    r_toggle_counter <= 0;
+                    r_show_animation <= ~r_show_animation;
+                end else begin
+                    r_toggle_counter <= r_toggle_counter + 1;
+                end
+            end else begin
+                r_toggle_counter <= 0;
+                r_show_animation <= 0;
+            end
+        end
+    end
+
     // 모드에 따라 출력 선택
-    assign an = (mode == IDLE_MODE) ? w_an_idle : w_an_num;
-    assign seg = (mode == IDLE_MODE) ? w_seg_idle : w_seg_num;
+    assign an = (mode == IDLE_MODE) ? w_an_idle :
+                (mode == START_MODE && r_show_animation) ? w_an_idle : w_an_num;
+    assign seg = (mode == IDLE_MODE) ? w_seg_idle :
+                 (mode == START_MODE && r_show_animation) ? w_seg_idle : w_seg_num;
 
 endmodule
 
