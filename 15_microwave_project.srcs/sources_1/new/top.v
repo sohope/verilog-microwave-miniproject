@@ -114,7 +114,7 @@ module top #(
     // );
 
     // Servo Motor
-    ppwm_servo u_pwm_servo_control(
+    pwm_servo u_pwm_servo_control(
         .clk(clk),   // 100MHz clock input 
         .reset(reset),
         .sw(sw),
