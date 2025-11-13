@@ -3,6 +3,7 @@
 //----------------- pwm_duty_cycle_control ---------------------
 module pwm_duty_cycle_control (
     input clk,
+    input reset,
     input duty_inc,
     input duty_dec,
     output [3:0] DUTY_CYCLE,
