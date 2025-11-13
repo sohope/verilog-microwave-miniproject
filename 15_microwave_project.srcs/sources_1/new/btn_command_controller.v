@@ -59,8 +59,6 @@ module btn_command_controller(
             IDLE_MODE: begin
                 if (rotary_changed)
                     next_state = PAUSE_MODE;  // rotary encoder 회전 시 PAUSE로
-                else if (r_idle_timer == (CLOCK_CYCLE_5SEC)-1)
-                    next_state = PAUSE_MODE;  // 5초 후 자동으로 PAUSE로
                 else
                     next_state = IDLE_MODE;
             end
@@ -68,8 +66,6 @@ module btn_command_controller(
             PAUSE_MODE: begin
                 if (btnL_edge)
                     next_state = START_MODE;  // btnL 누르면 START로
-                // else if (r_idle_timer == (CLOCK_CYCLE_5SEC)-1)
-                //     next_state = IDLE_MODE;   // 5초간 아무 동작 없으면 IDLE로
                 else
                     next_state = PAUSE_MODE;
             end
