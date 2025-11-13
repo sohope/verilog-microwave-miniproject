@@ -43,6 +43,7 @@ module top #(
     // 디바운서 결과 저장용 변수
     wire [3:0] w_clean_btn;
 	wire [2:0] w_clean_sig;
+    wire w_clean_sw;  // SW0 디바운서 출력
 
     // 로터리 엔코더 관련 변수
 	wire [7:0] w_count;
@@ -53,16 +54,17 @@ module top #(
     wire pwm_out_servo_motor;
     wire duty_cycle_servo_motor;
 
+
     // SW0 엣지 검출
     always @(posedge clk, posedge reset) begin
         if (reset)
             r_prev_sw <= 0;
         else
-            r_prev_sw <= sw;
+            r_prev_sw <= w_clean_sw;
     end
 
-    assign sw_rising = sw && !r_prev_sw;   // SW0 올릴 때 (문 열림)
-    assign sw_falling = !sw && r_prev_sw;  // SW0 내릴 때 (문 닫힘)
+    assign sw_rising = w_clean_sw && !r_prev_sw;   // SW0 올릴 때 (문 열림)
+    assign sw_falling = !w_clean_sw && r_prev_sw;  // SW0 내릴 때 (문 닫힘)
 
     // btnL 디바운스 인스턴스 생성 (10ms용)
     multi_debouncer #(
@@ -73,6 +75,16 @@ module top #(
         .reset(reset),
         .noisy_sig({btnU, btnD, btnL, btnR}),
         .clean_sig(w_clean_btn)
+    );
+    
+    // SW0 디바운스 인스턴스 생성 (10ms용)
+    debouncer #(
+        .DEBOUNCE_LIMIT(BTN_DEBOUNCE_LIMIT)
+    ) u_sw_debouncer (
+        .clk(clk),
+        .reset(reset),
+        .noisy_sig(sw),
+        .clean_sig(w_clean_sw)
     );
 
     // s1, s2, key 디바운스 인스턴스 생성 (2ms용)
@@ -104,7 +116,7 @@ module top #(
         .btnL(w_clean_btn[1]),   // btnL (2채널 중 상위비트) <-- btnL 추가
         .btnR(w_clean_btn[0]),   // btnR (2채널 중 하위비트) <-- btnR 추가
         .rotary_count(w_count),  // rotary encoder count 입력
-        .sw(sw),                 // SW0 스위치 입력 (서보모터용)
+        .sw(w_clean_sw),         // SW0 스위치 입력 (디바운스 적용)
         .buzzer_done(w_buzzer_done),  // 부저 3회 완료 신호
         .seg_data(w_seg_data),
         .mode(w_mode),
@@ -124,10 +136,10 @@ module top #(
 
     // Servo Motor
     pwm_servo u_pwm_servo_control(
-        .clk(clk),   // 100MHz clock input 
+        .clk(clk),   // 100MHz clock input
         .reset(reset),
-        .sw(sw),
-        .servo_motor_pwm(servo_motor_pwm)       // 10MHz PWM output signal 
+        .sw(w_clean_sw),  // SW0 스위치 입력 (디바운스 적용)
+        .servo_motor_pwm(servo_motor_pwm)       // 10MHz PWM output signal
     );
     
     // FND
