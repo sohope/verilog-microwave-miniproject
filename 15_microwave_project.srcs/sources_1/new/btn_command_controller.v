@@ -1,16 +1,16 @@
 `timescale 1ns / 1ps
 
 module btn_command_controller(
-    input clk,
-    input reset,
-    input btnL,           // btnL (2채널 중 상위비트) <-- btnL 추가
-    input btnR,           // btnR (2채널 중 하위비트) <-- btnR 추가
-    input [7:0] rotary_count,  // rotary encoder 카운트 입력
-    input sw,             // SW0 스위치 입력 (서보모터용)
-    input buzzer_done,    // 부저 3회 완료 신호
-    output [13:0] seg_data,
-    output [2:0] mode,
-    output beep_finish    // 타이머 종료 부저 트리거 (3회)
+        input clk,
+        input reset,
+        input btnL,
+        input btnR,
+        input [7:0] rotary_count,  // rotary encoder 카운트 입력
+        input sw,             // SW0 스위치 입력 (서보모터용)
+        input buzzer_done,    // 부저 3회 완료 신호
+        output [13:0] seg_data,
+        output [2:0] mode,
+        output beep_finish    // 타이머 종료 부저 트리거 (3회)
     );
 
     // MODE 정의
@@ -104,7 +104,6 @@ module btn_command_controller(
             r_prev_btnR <= btnR;
             r_prev_rotary_count <= rotary_count;
 
-            // 타이머 관리
             if (curr_state == PAUSE_MODE) begin
                 if (r_idle_timer == (CLOCK_CYCLE_5SEC)-1)
                     r_idle_timer <= 0;
@@ -129,7 +128,6 @@ module btn_command_controller(
                 r_counter_1min <= 0;
             end else if(curr_state == PAUSE_MODE) begin
                 // PAUSE 모드에서는 rotary encoder 변경 시에만 시간 설정 (10초 단위)
-                // rotary_count * 10초 = 총 초 단위
                 r_counter_10ns <= 0;
 
                 // rotary encoder가 변경되었을 때만 시간 업데이트
@@ -143,9 +141,7 @@ module btn_command_controller(
                         r_counter_1sec <= 59;
                     end
                 end
-                // rotary 변경 없으면 현재 값 유지 (START에서 멈춘 값 유지)
             end
-            // if (curr_state == START_MODE && !r_pause) begin  // 추가: 일시정지 시 카운트 정지  -->  && !r_pause
             else if (curr_state == START_MODE) begin  // 추가: 일시정지 시 카운트 정지  -->  && !r_pause
                 if (r_counter_10ns == MAIN_FREQUENCY-1) begin  // 100,000,000-1(1s)에 도달하면
                     if (r_counter_1sec == 0) begin // 초단위가 0에 도달하면
@@ -195,9 +191,5 @@ module btn_command_controller(
 
     // FINISH_MODE에서 부저 3회 트리거 신호 생성
     assign beep_finish = (curr_state == FINISH_MODE);
-
-    // TODO: SW0에 따른 서보모터 제어 추가
-    // SW0 올리면: 서보모터 90도 설정
-    // SW0 내리면: 서보모터 0도 설정
 
 endmodule
