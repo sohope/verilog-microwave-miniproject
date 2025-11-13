@@ -105,14 +105,22 @@ module top #(
     );
 
     // Servo Motor
-    pwm_duty_cycle_control u_servo_motor_pwm_duty_cycle_control (
-        .clk(clk),
-        .duty_inc(w_debounced_inc_btn),
-        .duty_dec(w_debounced_dec_btn),
-        .DUTY_CYCLE(duty_cycle_servo_motor),
-        .PWM_OUT(pwm_out_servo_motor)       // 10MHz PWM output signal 
-    );
+    // pwm_duty_cycle_control u_servo_motor_pwm_duty_cycle_control (
+    //     .clk(clk),
+    //     .duty_inc(w_debounced_inc_btn),
+    //     .duty_dec(w_debounced_dec_btn),
+    //     .DUTY_CYCLE(duty_cycle_servo_motor),
+    //     .PWM_OUT(pwm_out_servo_motor)       // 10MHz PWM output signal 
+    // );
 
+    // Servo Motor
+    ppwm_servo u_pwm_servo_control(
+        .clk(clk),   // 100MHz clock input 
+        .reset(reset),
+        .sw(sw),
+        .servo_motor_pwm(servo_motor_pwm)       // 10MHz PWM output signal 
+    );
+    
     // FND
     fnd_controller u_fnd_controller(
         .clk(clk),
