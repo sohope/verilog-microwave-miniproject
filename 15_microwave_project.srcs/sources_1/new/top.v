@@ -19,6 +19,7 @@ module top #(
         output [3:0] an,
         output [7:0] seg,
         output dc_motor_pwm,
+        output [1:0] in1_in2,
         output servo_motor_pwm,
         output buzzer_pwm
     );
@@ -34,7 +35,7 @@ module top #(
     wire w_buzzer_finish;   // 타이머 종료 부저 출력
 
     // 디바운서 결과 저장용 변수
-    wire [1:0] w_clean_btn;
+    wire [3:0] w_clean_btn;
 	wire [2:0] w_clean_sig;
 
     // 로터리 엔코더 관련 변수
@@ -48,12 +49,12 @@ module top #(
 
     // btnL 디바운스 인스턴스 생성 (10ms용)
     multi_debouncer #(
-        .NUM_SIGNALS(2),
+        .NUM_SIGNALS(4),
         .DEBOUNCE_LIMIT(BTN_DEBOUNCE_LIMIT)
     ) u_multi_btn_debouncer(
         .clk(clk),
         .reset(reset),
-        .noisy_sig({btnL, btnR}),
+        .noisy_sig({btnU, btnD, btnL, btnR}),
         .clean_sig(w_clean_btn)
     );
 
@@ -96,10 +97,11 @@ module top #(
     // DC Motor
     pwm_duty_cycle_control u_dc_motor_pwm_duty_cycle_control (
         .clk(clk),
-        .duty_inc(w_debounced_inc_btn),
-        .duty_dec(w_debounced_dec_btn),
+        .duty_inc(w_clean_btn[3]),
+        .duty_dec(w_clean_btn[2]),
         .DUTY_CYCLE(duty_cycle_dc_motor),
-        .PWM_OUT(pwm_out_dc_motor)       // 10MHz PWM output signal 
+        .PWM_OUT(dc_motor_pwm),       // 10MHz PWM output signal 
+        .in1_in2(in1_in2)
     );
 
     // Servo Motor
