@@ -29,10 +29,16 @@ module top #(
     wire [2:0] w_mode;
 
     // 부저 제어용 변수
-    wire w_beep_finish;     // 타이머 종료 부저 트리거 (3회)
-    wire w_buzzer_done;     // 부저 3회 완료 신호
-    wire w_buzzer_door;     // 문 열림/닫힘 부저 출력
-    wire w_buzzer_finish;   // 타이머 종료 부저 출력
+    wire w_beep_finish;        // 타이머 종료 부저 트리거 (3회)
+    wire w_buzzer_done;        // 부저 3회 완료 신호
+    wire w_buzzer_door_open;   // 문 열림 부저 출력
+    wire w_buzzer_door_close;  // 문 닫힘 부저 출력
+    wire w_buzzer_finish;      // 타이머 종료 부저 출력
+
+    // SW0 엣지 검출용 변수
+    reg r_prev_sw = 0;
+    wire sw_rising;
+    wire sw_falling;
 
     // 디바운서 결과 저장용 변수
     wire [3:0] w_clean_btn;
@@ -46,6 +52,17 @@ module top #(
     wire duty_cycle_dc_motor;
     wire pwm_out_servo_motor;
     wire duty_cycle_servo_motor;
+
+    // SW0 엣지 검출
+    always @(posedge clk, posedge reset) begin
+        if (reset)
+            r_prev_sw <= 0;
+        else
+            r_prev_sw <= sw;
+    end
+
+    assign sw_rising = sw && !r_prev_sw;   // SW0 올릴 때 (문 열림)
+    assign sw_falling = !sw && r_prev_sw;  // SW0 내릴 때 (문 닫힘)
 
     // btnL 디바운스 인스턴스 생성 (10ms용)
     multi_debouncer #(
@@ -123,24 +140,32 @@ module top #(
         .seg(seg)
     );
     
-    // Buzzer - Door (SW0 제어)
-    buzzer_door u_buzzer_door(
+    // Buzzer - Door Open (문 열림: 삡 1회)
+    buzzer_door_open u_buzzer_door_open(
         .clk(clk),
         .reset(reset),
-        .sw(sw),                // SW0 스위치 입력
-        .buzzer(w_buzzer_door)  // 문 열림/닫힘 부저 출력
+        .trigger(sw_rising),           // SW0 올릴 때 트리거
+        .buzzer(w_buzzer_door_open)    // 문 열림 부저 출력
     );
 
-    // Buzzer - Finish (타이머 종료)
+    // Buzzer - Door Close (문 닫힘: 삡 2회)
+    buzzer_door_close u_buzzer_door_close(
+        .clk(clk),
+        .reset(reset),
+        .trigger(sw_falling),          // SW0 내릴 때 트리거
+        .buzzer(w_buzzer_door_close)   // 문 닫힘 부저 출력
+    );
+
+    // Buzzer - Finish (타이머 종료: 삡 3회)
     buzzer_finish u_buzzer_finish(
         .clk(clk),
         .reset(reset),
-        .beep_finish(w_beep_finish),  // 타이머 종료 트리거
-        .buzzer(w_buzzer_finish),     // 타이머 종료 부저 출력
-        .buzzer_done(w_buzzer_done)   // 3회 완료 신호
+        .beep_finish(w_beep_finish),   // 타이머 종료 트리거
+        .buzzer(w_buzzer_finish),      // 타이머 종료 부저 출력
+        .buzzer_done(w_buzzer_done)    // 3회 완료 신호
     );
 
-    // 두 부저 출력을 OR로 합침
-    assign buzzer_pwm = w_buzzer_door | w_buzzer_finish;
+    // 세 부저 출력을 OR로 합침
+    assign buzzer_pwm = w_buzzer_door_open | w_buzzer_door_close | w_buzzer_finish;
 
 endmodule
