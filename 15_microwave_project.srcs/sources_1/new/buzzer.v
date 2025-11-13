@@ -68,6 +68,7 @@ module buzzer_door_open #(
     end
 
     // 부저 출력 생성
+    // r_beeping == 1 (부저 울림 중)이면 2kHz PWM 출력, 아니면 0
     assign buzzer = (r_beeping) ? r_beep_clk : 0;
 
 endmodule
@@ -165,6 +166,7 @@ module buzzer_door_close #(
     end
 
     // 부저 출력 생성
+    // r_beeping == 1 (부저 울림 중) && r_beep_phase == 0 (소리 구간, 휴지 구간 아님)이면 2kHz PWM 출력, 아니면 0
     assign buzzer = (r_beeping && r_beep_phase == 0) ? r_beep_clk : 0;
 
 endmodule
@@ -267,18 +269,8 @@ module buzzer_finish #(
     end
 
     // 부저 출력 생성
-    reg r_buzzer_out = 0;
-    always @(*) begin
-        if (r_beeping && r_beep_phase == 0) begin
-            // "삡" 소리 구간
-            r_buzzer_out = r_beep_clk;
-        end else begin
-            // 휴지 구간 또는 울리지 않음
-            r_buzzer_out = 0;
-        end
-    end
-
-    assign buzzer = r_buzzer_out;
+    // r_beeping == 1 (부저 울림 중) && r_beep_phase == 0 (소리 구간, 휴지 구간 아님)이면 2kHz PWM 출력, 아니면 0
+    assign buzzer = (r_beeping && r_beep_phase == 0) ? r_beep_clk : 0;
     assign buzzer_done = r_finish_done;
 
 endmodule
