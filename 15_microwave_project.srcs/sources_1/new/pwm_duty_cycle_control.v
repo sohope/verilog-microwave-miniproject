@@ -5,13 +5,14 @@ module pwm_duty_cycle_control (
       input clk,
       input duty_inc,
       input duty_dec,
+      input [2:0] mode,     // 모드 입력 (START_MODE일 때만 PWM 출력)
       output [3:0] DUTY_CYCLE,
-      output PWM_OUT,       // 10MHz PWM output signal 
+      output PWM_OUT,       // 10MHz PWM output signal
       output [1:0] in1_in2
       // output PWM_OUT_LED
    ); 
 
-   reg[3:0] r_DUTY_CYCLE=5;     // initial duty cycle is 50%
+   reg[3:0] r_DUTY_CYCLE=6;     // initial duty cycle is 60%
    reg[3:0] r_counter_PWM=0;    // counter for creating 10Mhz PWM signal
 
    reg prev_duty_inc_state = 0;
@@ -35,7 +36,9 @@ module pwm_duty_cycle_control (
          r_counter_PWM <= 0;
    end
 
-   assign PWM_OUT = r_counter_PWM < r_DUTY_CYCLE ? 1:0;
+   // START_MODE(3'b010)일 때만 PWM 출력
+   parameter START_MODE = 3'b010;
+   assign PWM_OUT = (mode == START_MODE) ? (r_counter_PWM < r_DUTY_CYCLE ? 1:0) : 1'b0;
    assign DUTY_CYCLE = r_DUTY_CYCLE;
    assign in1_in2 = 2'b10;
 

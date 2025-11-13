@@ -99,8 +99,9 @@ module top #(
         .clk(clk),
         .duty_inc(w_clean_btn[3]),
         .duty_dec(w_clean_btn[2]),
+        .mode(w_mode),                // 모드 입력 (START_MODE일 때만 PWM 출력)
         .DUTY_CYCLE(duty_cycle_dc_motor),
-        .PWM_OUT(dc_motor_pwm),       // 10MHz PWM output signal 
+        .PWM_OUT(dc_motor_pwm),       // 10MHz PWM output signal
         .in1_in2(in1_in2)
     );
 
