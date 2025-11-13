@@ -4,7 +4,7 @@
 module buzzer_door_open #(
     parameter CLK_FREQ = 100_000_000,
     parameter BEEP_FREQ = 2000,           // 2kHz 부저 주파수
-    parameter BEEP_DURATION = CLK_FREQ / 10  // 100ms
+    parameter BEEP_DURATION = CLK_FREQ * 4 / 10  // 400ms
 )(
     input clk,
     input reset,
@@ -77,7 +77,7 @@ endmodule
 module buzzer_door_close #(
     parameter CLK_FREQ = 100_000_000,
     parameter BEEP_FREQ = 2000,           // 2kHz 부저 주파수
-    parameter BEEP_DURATION = CLK_FREQ / 10  // 100ms
+    parameter BEEP_DURATION = CLK_FREQ * 4 / 10  // 400ms
 )(
     input clk,
     input reset,
@@ -174,7 +174,7 @@ endmodule
 module buzzer_finish #(
     parameter CLK_FREQ = 100_000_000,
     parameter BEEP_FREQ = 2000,           // 2kHz 부저 주파수
-    parameter BEEP_DURATION = CLK_FREQ / 10  // 100ms
+    parameter BEEP_DURATION = CLK_FREQ * 4 / 10  // 400ms
 )(
     input clk,
     input reset,
