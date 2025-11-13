@@ -42,6 +42,10 @@ module btn_command_controller(
     // IDLE 자동 진입용 5초 타이머
     reg [$clog2(CLOCK_CYCLE_5SEC)-1:0] r_idle_timer = 0;        // 5초 타이머 카운터
 
+    // 로터리 엔코더 변화량 계산용 변수
+    reg signed [8:0] r_delta;         // 로터리 변화량 (-128 ~ +127)
+    reg [15:0] r_total_seconds;       // 총 초 계산용 (0 ~ 5999)
+
     // 1. 상태 레지스터 업데이트 (Moore FSM - 순차 로직)
     always @(posedge clk, posedge reset) begin
         if (reset)
@@ -135,16 +139,31 @@ module btn_command_controller(
                 // PAUSE 모드에서는 rotary encoder 변경 시에만 시간 설정 (2초 단위)
                 r_counter_10ns <= 0;
 
-                // rotary encoder가 변경되었을 때만 시간 업데이트
+                // rotary encoder가 변경되었을 때만 시간 업데이트 (상대적 변화량 사용)
                 if (rotary_changed) begin
-                    // 총 초 계산 (최대 99분 59초 = 5999초)
-                    if (rotary_count * 2 <= 5999) begin
-                        r_counter_1min <= (rotary_count * 2) / 60;  // 분 계산
-                        r_counter_1sec <= (rotary_count * 2) % 60;  // 초 계산 (나머지)
-                    end else begin
-                        r_counter_1min <= 99;
-                        r_counter_1sec <= 59;
+                    // rotary encoder의 변화량 계산 (블로킹 할당 사용)
+                    r_delta = $signed({1'b0, rotary_count}) - $signed({1'b0, r_prev_rotary_count});
+
+                    // 현재 시간을 총 초로 변환 (블로킹 할당 사용)
+                    r_total_seconds = r_counter_1min * 60 + r_counter_1sec;
+
+                    // delta * 2초 만큼 증가/감소 (블로킹 할당 사용)
+                    if (r_delta > 0) begin
+                        // 시계방향: 시간 증가
+                        r_total_seconds = r_total_seconds + (r_delta * 2);
+                        if (r_total_seconds > 5999)
+                            r_total_seconds = 5999;  // 최대 99분 59초
+                    end else if (r_delta < 0) begin
+                        // 반시계방향: 시간 감소
+                        if (r_total_seconds >= (-r_delta * 2))
+                            r_total_seconds = r_total_seconds - (-r_delta * 2);
+                        else
+                            r_total_seconds = 0;  // 최소 00분 00초
                     end
+
+                    // 총 초를 분:초로 변환 (non-blocking 할당 사용)
+                    r_counter_1min <= r_total_seconds / 60;
+                    r_counter_1sec <= r_total_seconds % 60;
                 end
             end
             else if (curr_state == START_MODE) begin  // 추가: 일시정지 시 카운트 정지  -->  && !r_pause
